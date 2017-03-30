@@ -25,7 +25,7 @@ echo
 echo -e "\e[1;41;33mPulp Tasks Count by State:\e[0m"
 PULP_RESULT=$(pulp-admin tasks list |grep State|uniq -c)
 if [ -n "${PULP_RESULT}" ] ; then
-        echo ${PULP_RESULT}
+        echo """${PULP_RESULT}"""
 else
         echo "No Pulp Tasks Running."
 fi
