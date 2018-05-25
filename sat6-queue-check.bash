@@ -39,5 +39,5 @@ echo
 echo -en "\e[1;41;33mSatellite Service Status:\e[0m  "
 katello-service status 2> /dev/null|tail -n1
 echo
-echo -en "\e[1;41;33mHammer Ping Results:\e[0m  "
+echo -e "\e[1;41;33mHammer Ping Results:\e[0m  "
 hammer ping
