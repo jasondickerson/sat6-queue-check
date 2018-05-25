@@ -3,7 +3,7 @@ Script to provide a quick view of Satellite queues including foreman, katello, p
 
 Example Output:
 
-Uptime and Load Average:
+```Uptime and Load Average:
  16:19:18 up 20 min,  1 user,  load average: 0.02, 0.14, 0.19
 
 Passenger Status
@@ -67,5 +67,4 @@ pulp_auth:
     Server Response: Duration: 14ms
 foreman_tasks:  
     Status:          ok
-    Server Response: Duration: 904ms
-
+    Server Response: Duration: 904ms```
