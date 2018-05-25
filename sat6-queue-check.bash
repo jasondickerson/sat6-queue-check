@@ -14,7 +14,7 @@ echo -e "\e[1;41;33mPassenger Status\e[0m"
 passenger-status | head -n 13
 echo
 echo -en "\e[1;41;33mForeman Task Queue:\e[0m  "
-foreman-rake foreman_tasks:cleanup TASK_SEARCH='label ~ *' STATES=running,pending,planning,planned VERBOSE=true NOOP=true 2> /dev/null | grep deleted |cut -d\  -f2
+foreman-rake foreman_tasks:cleanup TASK_SEARCH='label ~ *' STATES=running,pending,planning,planned VERBOSE=true NOOP=true 2> /dev/null | grep "tasks would be deleted" |cut -d\  -f2
 echo
 echo -en "\e[1;41;33mMonitor Event Queue Task backlog:\e[0m  "
 echo "select count(*) from katello_events" | su - postgres -c "psql foreman"|head -n3|tail -n1|tr -s " "|cut -d\  -f2
