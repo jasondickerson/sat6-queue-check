@@ -36,8 +36,11 @@ else
         echo "No Pulp Tasks Running."
 fi
 echo
-echo -en "\e[1;41;33mTotal pulp tasks queued:\e[0m  "
-mongo pulp_database --eval "db.task_status.find({'state': {\$ne: 'finished' }}).count()"|tail -n1
+echo -en "\e[1;41;33mTotal pulp tasks running:\e[0m  "
+mongo pulp_database --eval "db.task_status.find({'state': {\$eq: 'running' }}).count()"|tail -n1
+echo
+echo -en "\e[1;41;33mTotal pulp tasks waiting:\e[0m  "
+mongo pulp_database --eval "db.task_status.find({'state': {\$eq: 'waiting' }}).count()"|tail -n1
 echo
 echo -en "\e[1;41;33mSatellite QPID\e[0m "
 qpid-stat -q --ssl-certificate=/etc/pki/katello/qpid_client_striped.crt -b amqps://localhost:5671 | grep -v pulp.agent | grep -if qpid_search
