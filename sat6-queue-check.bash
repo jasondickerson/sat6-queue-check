@@ -44,7 +44,7 @@ where
   state='${STATE}';
 EOF
 
-		cat <<EOF | su - postgres -c 'psql foreman -t'|head -n1
+		cat <<EOF | su - postgres -c 'psql foreman -t'
 select
   count(label) as outstanding_task_count,
   label as task_name
