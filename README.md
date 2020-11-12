@@ -1,7 +1,8 @@
 # sat6-queue-check
 Script to provide a quick view of Satellite queues including foreman, katello, pulp, and qpid.  
 
-v2.0 supports Satellite with Remote Databases and is tested again Red Hat Satellite 6.6
+v2.0 supports Satellite with Remote Databases and is tested again Red Hat Satellite 6.6.  
+
 v3.0 accounts for changes made in Satellite 6.7
 
 Example Output:
