@@ -9,12 +9,12 @@ fi
 echo -e "\e[1;41;33mUptime and Load Average:\e[0m"
 uptime
 echo
-echo -e "\e[1;41;33mPassenger Status\e[0m"
-passenger-status | head -n 13
-echo
 rpm -q satellite > /dev/null
 IS_SATELLITE=$?
 if [ ${IS_SATELLITE} -eq 0 ] ; then
+  echo -e "\e[1;41;33mPassenger Status\e[0m"
+  passenger-status | head -n 13
+  echo
   FDB_HOST=$(grep host: /etc/foreman/database.yml | tr -s " " | cut -d" " -f3)
   if [ -z ${FDB_HOST} ] ; then
     FDB_HOST="localhost"
@@ -31,11 +31,12 @@ if [ ${IS_SATELLITE} -eq 0 ] ; then
     echo ${FDB_HOST}:5432:foreman:${FDB_USER}:${FDB_PASS} >> ~/.pgpass
     chmod 600 ~/.pgpass
   fi
+
   echo -en "\e[1;41;33mMonitor Event Queue Task backlog:\e[0m  "
   echo "select count(*) from katello_events" | psql -h ${FDB_HOST} -U ${FDB_USER} -t foreman
   echo
   echo -en "\e[1;41;33mListen on candlepin events Task backlog:\e[0m  "
-  qpid-stat --ssl-certificate /etc/pki/katello/certs/java-client.crt --ssl-key /etc/pki/katello/private/java-client.key -b "amqps://localhost:5671" -q katello_event_queue | grep queue-depth | tr -s " " | cut -d\  -f3
+  qpid-stat --ssl-certificate /etc/pki/pulp/qpid/client.crt -b "amqps://localhost:5671" -q katello_event_queue | grep queue-depth | tr -s " " | cut -d\  -f3
   echo
   echo -ne "\e[1;41;33mForeman Total tasks:\e[0m\\t"
   cat << EOF | psql -h ${FDB_HOST} -U ${FDB_USER} -t foreman
@@ -111,7 +112,7 @@ if [ ${WAITING} -ne 0 ] ; then
 fi
 echo
 echo -en "\e[1;41;33mSatellite QPID\e[0m "
-qpid-stat -q --ssl-certificate=/etc/pki/katello/qpid_client_striped.crt -b amqps://localhost:5671 | grep -v pulp.agent | grep -if qpid_search
+qpid-stat -q --ssl-certificate=/etc/pki/pulp/qpid/client.crt -b amqps://localhost:5671 | grep -v pulp.agent | grep -if qpid_search
 echo
 echo -en "\e[1;41;33mSatellite Service Status:\e[0m  "
 if [ -x /usr/bin/foreman-maintain ] ; then
