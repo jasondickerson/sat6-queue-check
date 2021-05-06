@@ -1,10 +1,17 @@
 #!/bin/bash
-if [ ! -f qpid_search ] ; then
+if [ ! -f /tmp/qpid_search ] ; then
   echo """queue
 celery
 pulp
 resource
-=""" > qpid_search
+=""" > /tmp/qpid_search
+fi
+if [ -f /etc/pki/pulp/qpid/client.crt ] ; then
+  QPID_CERT="/etc/pki/pulp/qpid/client.crt"
+elif [ -f /etc/pki/katello/qpid_client_striped.crt ] ; then
+  QPID_CERT="/etc/pki/katello/qpid_client_striped.crt"
+else 
+  QPID_CERT="/etc/pki/katello/certs/java-client.crt"
 fi
 echo -e "\e[1;41;33mUptime and Load Average:\e[0m"
 uptime
@@ -12,9 +19,13 @@ echo
 rpm -q satellite > /dev/null
 IS_SATELLITE=$?
 if [ ${IS_SATELLITE} -eq 0 ] ; then
-  echo -e "\e[1;41;33mPassenger Status\e[0m"
-  passenger-status | head -n 13
-  echo
+  SATELLITE_MAJOR_VERSION=$(rpm -q satellite --qf %{VERSION} | cut -d. -f1)
+  SATELLITE_MINOR_VERSION=$(rpm -q satellite --qf %{VERSION} | cut -d. -f2)
+  if [[ ${SATELLITE_MAJOR_VERSION} -ge 6 && ${SATELLITE_MINOR_VERSION} -lt 9 ]] ; then
+    echo -e "\e[1;41;33mPassenger Status\e[0m"
+    passenger-status | head -n 13
+    echo
+  fi
   FDB_HOST=$(grep host: /etc/foreman/database.yml | tr -s " " | cut -d" " -f3)
   if [ -z ${FDB_HOST} ] ; then
     FDB_HOST="localhost"
@@ -36,7 +47,7 @@ if [ ${IS_SATELLITE} -eq 0 ] ; then
   echo "select count(*) from katello_events" | psql -h ${FDB_HOST} -U ${FDB_USER} -t foreman
   echo
   echo -en "\e[1;41;33mListen on candlepin events Task backlog:\e[0m  "
-  qpid-stat --ssl-certificate /etc/pki/pulp/qpid/client.crt -b "amqps://localhost:5671" -q katello_event_queue | grep queue-depth | tr -s " " | cut -d\  -f3
+  qpid-stat --ssl-certificate ${QPID_CERT} -b "amqps://localhost:5671" -q katello_event_queue | grep queue-depth | tr -s " " | cut -d\  -f3
   echo
   echo -ne "\e[1;41;33mForeman Total tasks:\e[0m\\t"
   cat << EOF | psql -h ${FDB_HOST} -U ${FDB_USER} -t foreman
@@ -112,21 +123,23 @@ if [ ${WAITING} -ne 0 ] ; then
 fi
 echo
 echo -en "\e[1;41;33mSatellite QPID\e[0m "
-qpid-stat -q --ssl-certificate=/etc/pki/pulp/qpid/client.crt -b amqps://localhost:5671 | grep -v pulp.agent | grep -if qpid_search
+qpid-stat --ssl-certificate ${QPID_CERT} -b amqps://localhost:5671 -q | grep -v pulp.agent | grep -if /tmp/qpid_search
 echo
-echo -en "\e[1;41;33mSatellite Service Status:\e[0m  "
-if [ -x /usr/bin/foreman-maintain ] ; then
-  /usr/bin/foreman-maintain service status 2> /dev/null | grep "All services are running" &> /dev/null
-  if [ $? -eq 0 ] ; then
-    echo Success!
-  else
-    echo Failure!
-  fi
-else
-  katello-service status 2> /dev/null|tail -n1
-fi
-if [ ${IS_SATELLITE} -eq 0 ] ; then
-  echo
-  echo -e "\e[1;41;33mHammer Ping Results:\e[0m  "
-  hammer ping
-fi
+foreman-maintain health check --whitelist check-tftp-storage
+
+# echo -en "\e[1;41;33mSatellite Service Status:\e[0m  "
+# if [ -x /usr/bin/foreman-maintain ] ; then
+#   /usr/bin/foreman-maintain service status 2> /dev/null | grep "All services are running" &> /dev/null
+#   if [ $? -eq 0 ] ; then
+#     echo Success!
+#   else
+#     echo Failure!
+#   fi
+# else
+#   katello-service status 2> /dev/null|tail -n1
+# fi
+# if [ ${IS_SATELLITE} -eq 0 ] ; then
+#   echo
+#   echo -e "\e[1;41;33mHammer Ping Results:\e[0m  "
+#   hammer ping
+# fi
