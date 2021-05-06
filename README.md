@@ -7,6 +7,8 @@ v3.0 accounts for changes made in Satellite 6.7
 
 v4.0 includes some housekeeping improvements and is tested against Satellite 6.9
 
+v4.1 minor improvments, eliminated the qpid_search file, added lots of comments
+
 Example Output:
 
 ```
@@ -40,7 +42,6 @@ Satellite QPID Queues
   queue                                                      dur  autoDel  excl  msg   msgIn  msgOut  bytes  bytesIn  bytesOut  cons  bind
   ==========================================================================================================================================
   celery                                                     Y                      0    26     26       0   21.4k    21.4k        4     2
-  katello_event_queue                                        Y                      0     0      0       0      0        0         0     7
   pulp.task                                                  Y                      0     0      0       0      0        0         3     1
   reserved_resource_worker-0@sat6.example.com.celery.pidbox       Y                 0     0      0       0      0        0         1     2
   reserved_resource_worker-0@sat6.example.com.dq2            Y                      0     4      4       0   4.24k    4.24k        1     2
