@@ -27,11 +27,12 @@ if [ ${IS_SATELLITE} -eq 0 ] ; then
   if [[ ${SATELLITE_MAJOR_VERSION} -eq 6 && ${SATELLITE_MINOR_VERSION} -lt 9 ]] ; then
     echo -e "\e[1;41;33mPassenger Status\e[0m"
     passenger-status | head -n 13
-    echo
-  else
+  fi
+  if [[ ${SATELLITE_MAJOR_VERSION} -eq 6 && ${SATELLITE_MINOR_VERSION} -gt 9 ]] ; then
     echo -e "\e[1;41;33mPuma Status\e[0m"
     foreman-puma-status
   fi
+  echo
   # Find postgresql host
   FDB_HOST=$(grep host: /etc/foreman/database.yml | tr -s " " | cut -d" " -f3)
   if [ -z ${FDB_HOST} ] ; then
@@ -58,10 +59,14 @@ if [ ${IS_SATELLITE} -eq 0 ] ; then
   echo -en "\e[1;41;33mMonitor Event Queue Task backlog:\e[0m  "
   echo "select count(*) from katello_events" | psql -h ${FDB_HOST} -U ${FDB_USER} -t foreman
   echo
-  # Display any Candlepin Events backlog
-  echo -en "\e[1;41;33mListen on candlepin events Task backlog:\e[0m  "
-  qpid-stat --ssl-certificate ${QPID_CERT} -b "amqps://localhost:5671" -q katello_event_queue | grep queue-depth | tr -s " " | cut -d\  -f3
-  echo
+
+  if [[ ${SATELLITE_MAJOR_VERSION} -eq 6 && ${SATELLITE_MINOR_VERSION} -lt 10 ]] ; then
+    # Display any Candlepin Events backlog
+    echo -en "\e[1;41;33mListen on candlepin events Task backlog:\e[0m  "
+    qpid-stat --ssl-certificate ${QPID_CERT} -b "amqps://localhost:5671" -q katello_event_queue | grep queue-depth | tr -s " " | cut -d\  -f3
+    echo
+  fi
+
   # Report Foreman Tasks queue
   echo -ne "\e[1;41;33mForeman Total tasks:\e[0m\\t"
   cat << EOF | psql -h ${FDB_HOST} -U ${FDB_USER} -t foreman
