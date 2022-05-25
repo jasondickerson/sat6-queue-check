@@ -205,7 +205,10 @@ qpid-stat --ssl-certificate ${QPID_CERT} -b amqps://localhost:5671 -q | grep -v 
 echo
 
 # display health of server, services running, services pinging, etc...
-foreman-maintain health check --whitelist check-tftp-storage
+foreman-maintain health check 
+
+# Can add if needed to the health check command
+# --whitelist check-tftp-storage
 
 # echo -en "\e[1;41;33mSatellite Service Status:\e[0m  "
 # if [ -x /usr/bin/foreman-maintain ] ; then
