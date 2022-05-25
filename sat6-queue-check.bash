@@ -28,6 +28,9 @@ if [ ${IS_SATELLITE} -eq 0 ] ; then
     echo -e "\e[1;41;33mPassenger Status\e[0m"
     passenger-status | head -n 13
     echo
+  else
+    echo -e "\e[1;41;33mPuma Status\e[0m"
+    foreman-puma-status
   fi
   # Find postgresql host
   FDB_HOST=$(grep host: /etc/foreman/database.yml | tr -s " " | cut -d" " -f3)
@@ -99,49 +102,102 @@ EOF
   done
 fi
 
-# configure Mongo authentication
-MONGO_HOST=$(grep ^seeds: /etc/pulp/server.conf | cut -d\  -f2)
-MONGO_USER=$(grep ^username: /etc/pulp/server.conf | cut -d\  -f2)
-MONGO_PASS=$(grep ^password: /etc/pulp/server.conf | cut -d\  -f2)
-MONGO_REMOTE=""
-if [ ! -z ${MONGO_HOST} ] ; then
-  MONGO_REMOTE="--host ${MONGO_HOST}"
-  if [ ! -z ${MONGO_USER} ] ; then
-    MONGO_REMOTE="${MONGO_REMOTE} -u ${MONGO_USER}"
-    if [ ! -z ${MONGO_PASS} ] ; then
-      MONGO_REMOTE="${MONGO_REMOTE} -p ${MONGO_PASS}"
+# Distinguish between pulp2 and pulp3
+rpm -q python3-pulpcore &> /dev/null
+if [ $? -ne 0 ] ; then 
+
+  # configure Mongo authentication
+  MONGO_HOST=$(grep ^seeds: /etc/pulp/server.conf | cut -d\  -f2)
+  MONGO_USER=$(grep ^username: /etc/pulp/server.conf | cut -d\  -f2)
+  MONGO_PASS=$(grep ^password: /etc/pulp/server.conf | cut -d\  -f2)
+  MONGO_REMOTE=""
+  if [ ! -z ${MONGO_HOST} ] ; then
+    MONGO_REMOTE="--host ${MONGO_HOST}"
+    if [ ! -z ${MONGO_USER} ] ; then
+      MONGO_REMOTE="${MONGO_REMOTE} -u ${MONGO_USER}"
+      if [ ! -z ${MONGO_PASS} ] ; then
+        MONGO_REMOTE="${MONGO_REMOTE} -p ${MONGO_PASS}"
+      fi
     fi
   fi
-fi
 
-#Find total Running and Waiting tasks in pulp
-RUNNING=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.find({'state': {\$eq: 'running' }}).count()")
-WAITING=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.find({'state': {\$eq: 'waiting' }}).count()")
-echo -e "\e[1;41;33mPulp tasks Running:\e[0m  "${RUNNING}
-echo -e "\e[1;41;33mPulp tasks Waiting:\e[0m  "${WAITING}
-echo
+  #Find total Running and Waiting tasks in pulp
+  RUNNING=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.find({'state': {\$eq: 'running' }}).count()")
+  WAITING=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.find({'state': {\$eq: 'waiting' }}).count()")
+  echo -e "\e[1;41;33mPulp tasks Running:\e[0m  "${RUNNING}
+  echo -e "\e[1;41;33mPulp tasks Waiting:\e[0m  "${WAITING}
+  echo
 
-# Breakdown Running pulp Tasks
-if [ ${RUNNING} -ne 0 ] ; then
-  RUNNING_TYPES=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.distinct( 'task_type', {'state': {\$eq: 'running' }}).forEach(printjson)" | sed -e s/\"//g)
-  echo -e "\e[1;41;33mRunning Tasks by Type:\e[0m"
-  for TYPE in ${RUNNING_TYPES} ; do
-    COUNT=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.find({'state': {\$eq: 'running' }, 'task_type': {\$eq: '${TYPE}'}}).count()")
-    echo -e ${COUNT}\\t: ${TYPE}
-  done
+  # Breakdown Running pulp Tasks
+  if [ ${RUNNING} -ne 0 ] ; then
+    RUNNING_TYPES=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.distinct( 'task_type', {'state': {\$eq: 'running' }}).forEach(printjson)" | sed -e s/\"//g)
+    echo -e "\e[1;41;33mRunning Tasks by Type:\e[0m"
+    for TYPE in ${RUNNING_TYPES} ; do
+      COUNT=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.find({'state': {\$eq: 'running' }, 'task_type': {\$eq: '${TYPE}'}}).count()")
+      echo -e ${COUNT}\\t: ${TYPE}
+    done
+    echo
+  fi
+
+  # Breakdown Waiting pulp Tasks
+  if [ ${WAITING} -ne 0 ] ; then
+    WAITING_TYPES=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.distinct( 'task_type', {'state': {\$eq: 'waiting' }}).forEach(printjson)" | sed -e s/\"//g)
+    echo -e "\e[1;41;33mWaiting Tasks by Type:\e[0m"
+    for TYPE in ${WAITING_TYPES} ; do
+      COUNT=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.find({'state': {\$eq: 'waiting' }, 'task_type': {\$eq: '${TYPE}'}}).count()")
+      echo -e ${COUNT}\\t: ${TYPE}
+    done
+  fi
+  echo
+else
+  # Find Database Info
+  PDB_HOST=$(grep \'HOST\' /etc/pulp/settings.py |cut -d\' -f4)
+  PDB_USER=$(grep \'USER\' /etc/pulp/settings.py |cut -d\' -f4)
+
+  # Check for .pgpass file
+  if [ -f ~/.pgpass ] ; then
+    # if necessary configure .pgpass entry for auto login to foreman db
+    grep ${PDB_HOST}:5432:pulpcore:${PDB_USER}: ~/.pgpass &> /dev/null
+    if [ $? -ne 0 ] ; then
+      PDB_PASS=$(grep \'PASSWORD\' /etc/pulp/settings.py |cut -d\' -f4)
+      echo ${PDB_HOST}:5432:pulpcore:${PDB_USER}:${PDB_PASS} >> ~/.pgpass
+    fi
+  else
+    #create .pgpass file with foreman db entry
+    PDB_PASS=$(grep password: /etc/foreman/database.yml | tr -s " " | cut -d\" -f2)
+    echo ${PDB_HOST}:5432:pulpcore:${PDB_USER}:${PDB_PASS} >> ~/.pgpass
+    chmod 600 ~/.pgpass
+  fi
+
+  #Find total Running and Waiting tasks in pulp
+  RUNNING=$(psql -q -h ${PDB_HOST} -U ${PDB_USER} -t pulpcore -c "select count(*) from core_task where state='running';")
+  WAITING=$(psql -q -h ${PDB_HOST} -U ${PDB_USER} -t pulpcore -c "select count(*) from core_task where state='waiting';")
+  echo -e "\e[1;41;33mPulp tasks Running:\e[0m  "${RUNNING}
+  echo -e "\e[1;41;33mPulp tasks Waiting:\e[0m  "${WAITING}
+  echo
+
+  # Breakdown Running pulp Tasks
+  if [ ${RUNNING} -ne 0 ] ; then
+    RUNNING_TYPES=$(psql -q -h ${PDB_HOST} -U ${PDB_USER} -t pulpcore -c "select distinct name from core_task where state='running';")
+    echo -e "\e[1;41;33mRunning Tasks by Type:\e[0m"
+    for TYPE in ${RUNNING_TYPES} ; do
+      COUNT=$(psql -q -h ${PDB_HOST} -U ${PDB_USER} -t pulpcore -c "select count(*) from core_task where state='running' and name='${TYPE}';")
+      echo -e ${COUNT}\\t: ${TYPE}
+    done
+    echo
+  fi
+
+  # Breakdown Waiting pulp Tasks
+  if [ ${WAITING} -ne 0 ] ; then
+    WAITING_TYPES=$(psql -q -h ${PDB_HOST} -U ${PDB_USER} -t pulpcore -c "select distinct name from core_task where state='waiting';")
+    echo -e "\e[1;41;33mWaiting Tasks by Type:\e[0m"
+    for TYPE in ${WAITING_TYPES} ; do
+      COUNT=$(psql -q -h ${PDB_HOST} -U ${PDB_USER} -t pulpcore -c "select count(*) from core_task where state='waiting' and name='${TYPE}';")
+      echo -e ${COUNT}\\t: ${TYPE}
+    done
+  fi
   echo
 fi
-
-# Breakdown Waiting pulp Tasks
-if [ ${WAITING} -ne 0 ] ; then
-  WAITING_TYPES=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.distinct( 'task_type', {'state': {\$eq: 'waiting' }}).forEach(printjson)" | sed -e s/\"//g)
-  echo -e "\e[1;41;33mWaiting Tasks by Type:\e[0m"
-  for TYPE in ${WAITING_TYPES} ; do
-    COUNT=$(mongo --quiet ${MONGO_REMOTE} pulp_database --eval "db.task_status.find({'state': {\$eq: 'waiting' }, 'task_type': {\$eq: '${TYPE}'}}).count()")
-    echo -e ${COUNT}\\t: ${TYPE}
-  done
-fi
-echo
 
 # Display pulp server qpid queues, not to be confused with katello agent queues
 echo -en "\e[1;41;33mSatellite QPID\e[0m "

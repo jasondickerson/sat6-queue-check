@@ -9,18 +9,27 @@ v4.0 includes some housekeeping improvements and is tested against Satellite 6.9
 
 v4.1 minor improvments, eliminated the qpid_search file, added lots of comments
 
+v5.0 Added Puma Status for 6.10 and above, and added support for pulp3.
+
 Example Output:
 
 ```
 Uptime and Load Average:
- 12:15:09 up  2:08,  1 user,  load average: 0.00, 0.01, 0.05
+ 15:58:25 up  6:50,  2 users,  load average: 6.74, 3.81, 1.63
 
+Puma Status
+1401 (/usr/share/foreman/tmp/puma.state) Uptime:  6h49m | Phase: 0 | Load: 1[█░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]30 | Req: 2130
+ └  2725 CPU:   0.0% Mem:  713 MB Uptime:  6h49m | Load: 0[░░░░░]5 | Req: 201
+ └  2730 CPU:   0.0% Mem:  799 MB Uptime:  6h49m | Load: 0[░░░░░]5 | Req: 507
+ └  2736 CPU:  80.0% Mem:  830 MB Uptime:  6h49m | Load: 1[█░░░░]5 | Req: 408
+ └  2741 CPU:   0.0% Mem:  803 MB Uptime:  6h49m | Load: 0[░░░░░]5 | Req: 318
+ └  2743 CPU:   0.0% Mem:  779 MB Uptime:  6h49m | Load: 0[░░░░░]5 | Req: 219
+ └  2744 CPU:   0.0% Mem:  798 MB Uptime:  6h49m | Load: 0[░░░░░]5 | Req: 477
 Monitor Event Queue Task backlog:       0
 
 
-Listen on candlepin events Task backlog:  0
-
-Foreman Total tasks:	     0
+Listen on candlepin events Task backlog:  
+Foreman Total tasks:	    24
 
 Foreman tasks planning:	     0
 
@@ -28,32 +37,33 @@ Foreman tasks planning:	     0
 Foreman tasks planned:	     0
 
 
-Foreman tasks running:	     0
+Foreman tasks running:	    24
 
+                     24 | Actions::Katello::Repository::Sync
 
 Foreman tasks paused:	     0
 
 
-Pulp tasks Running:  0
-Pulp tasks Waiting:  0
+Pulp tasks Running:   4
+Pulp tasks Waiting:   19
 
+Running Tasks by Type:
+4	: pulp_rpm.app.tasks.synchronizing.synchronize
+
+Waiting Tasks by Type:
+16	: pulpcore.app.tasks.base.general_update
+3	: pulp_rpm.app.tasks.synchronizing.synchronize
 
 Satellite QPID Queues
-  queue                                                      dur  autoDel  excl  msg   msgIn  msgOut  bytes  bytesIn  bytesOut  cons  bind
-  ==========================================================================================================================================
-  celery                                                     Y                      0    26     26       0   21.4k    21.4k        4     2
-  pulp.task                                                  Y                      0     0      0       0      0        0         3     1
-  reserved_resource_worker-0@sat6.example.com.celery.pidbox       Y                 0     0      0       0      0        0         1     2
-  reserved_resource_worker-0@sat6.example.com.dq2            Y                      0     4      4       0   4.24k    4.24k        1     2
-  reserved_resource_worker-1@sat6.example.com.celery.pidbox       Y                 0     0      0       0      0        0         1     2
-  reserved_resource_worker-1@sat6.example.com.dq2            Y                      0     0      0       0      0        0         1     2
-  reserved_resource_worker-2@sat6.example.com.celery.pidbox       Y                 0     0      0       0      0        0         1     2
-  reserved_resource_worker-2@sat6.example.com.dq2            Y                      0     0      0       0      0        0         1     2
-  reserved_resource_worker-3@sat6.example.com.celery.pidbox       Y                 0     0      0       0      0        0         1     2
-  reserved_resource_worker-3@sat6.example.com.dq2            Y                      0     0      0       0      0        0         1     2
-  resource_manager                                           Y                      0     2      2       0   2.85k    2.85k        1     2
-  resource_manager@sat6.example.com.celery.pidbox                 Y                 0     0      0       0      0        0         1     2
-  resource_manager@sat6.example.com.dq2                      Y                      0     0      0       0      0        0         1     2
+  queue                                            dur  autoDel  excl  msg   msgIn  msgOut  bytes  bytesIn  bytesOut  cons  bind
+  ================================================================================================================================
+  celery                                           Y                      0    22     22       0   18.1k    18.1k        0     2
+  reserved_resource_worker-0@sat6.example.com.dq2  Y                      0     0      0       0      0        0         0     2
+  reserved_resource_worker-1@sat6.example.com.dq2  Y                      0     0      0       0      0        0         0     2
+  reserved_resource_worker-2@sat6.example.com.dq2  Y                      0     0      0       0      0        0         0     2
+  reserved_resource_worker-3@sat6.example.com.dq2  Y                      0     0      0       0      0        0         0     2
+  resource_manager                                 Y                      0     0      0       0      0        0         0     2
+  resource_manager@sat6.example.com.dq2            Y                      0     0      0       0      0        0         0     2
 
 Running ForemanMaintain::Scenario::FilteredScenario
 ================================================================================
