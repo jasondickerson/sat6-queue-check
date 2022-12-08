@@ -205,6 +205,11 @@ else
   echo
 fi
 
+# As of 6.10, QPID is no longer used for pulp or katello, only katello-agent
+# Thus there is nothing to monitor in QPID as far as internal Satellite/Capsule jobs
+# The previously monitored queues were moved to artemis and there is currently no way
+# to monitor artemis queues
+
 if [ ${IS_SATELLITE} -eq 0 ] ; then
   if [[ ${SATELLITE_MAJOR_VERSION} -eq 6 && ${SATELLITE_MINOR_VERSION} -lt 11 ]] ; then
     RUN_QPID=0
@@ -221,6 +226,7 @@ else
   fi
 fi
 
+# Only run QPID on 6.10 or less
 if [ ${RUN_QPID} -eq 0 ] ; then
   # Display pulp server qpid queues, not to be confused with katello agent queues
   echo -en "\e[1;41;33mSatellite QPID\e[0m "
