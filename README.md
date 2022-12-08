@@ -11,6 +11,11 @@ v4.1 minor improvments, eliminated the qpid_search file, added lots of comments
 
 v5.0 Added Puma Status for 6.10 and above, and added support for pulp3.
 
+Also available:
+
+  v5.1-unstable Added support for 6.11 and 6.12.  Updated pulp3 check.  Disabled qpid-stat for 6.11 and above.
+    Tested and Functional on Satellite 6.11 and 6.12.  Unfortunately, I no longer have a capsule to test on, but should work.
+
 Example Output:
 
 ```
