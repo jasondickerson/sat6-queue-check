@@ -28,7 +28,7 @@ if [ ${IS_SATELLITE} -eq 0 ] ; then
     echo -e "\e[1;41;33mPassenger Status\e[0m"
     passenger-status | head -n 13
   fi
-  if [[ ${SATELLITE_MAJOR_VERSION} -eq 6 && ${SATELLITE_MINOR_VERSION} -gt 9 ]] ; then
+  if [[ ${SATELLITE_MAJOR_VERSION} -eq 6 && ${SATELLITE_MINOR_VERSION} -gt 8 ]] ; then
     echo -e "\e[1;41;33mPuma Status\e[0m"
     foreman-puma-status
   fi
@@ -108,7 +108,8 @@ EOF
 fi
 
 # Distinguish between pulp2 and pulp3
-rpm -q python3-pulpcore &> /dev/null
+# rpm -q python3-pulpcore &> /dev/null
+rpm -qa | grep -e python3-pulpcore -e python39-pulpcore &> /dev/null
 if [ $? -ne 0 ] ; then 
 
   # configure Mongo authentication
@@ -169,7 +170,7 @@ else
     fi
   else
     #create .pgpass file with foreman db entry
-    PDB_PASS=$(grep password: /etc/foreman/database.yml | tr -s " " | cut -d\" -f2)
+    PDB_PASS=$(grep \'PASSWORD\' /etc/pulp/settings.py |cut -d\' -f4)
     echo ${PDB_HOST}:5432:pulpcore:${PDB_USER}:${PDB_PASS} >> ~/.pgpass
     chmod 600 ~/.pgpass
   fi
@@ -204,10 +205,34 @@ else
   echo
 fi
 
-# Display pulp server qpid queues, not to be confused with katello agent queues
-echo -en "\e[1;41;33mSatellite QPID\e[0m "
-qpid-stat --ssl-certificate ${QPID_CERT} -b amqps://localhost:5671 -q | grep -v pulp.agent | grep -e ueue -e celery -e pulp -e resource -e = |grep -v katello_event_queue
-echo
+# As of 6.10, QPID is no longer used for pulp or katello, only katello-agent
+# Thus there is nothing to monitor in QPID as far as internal Satellite/Capsule jobs
+# The previously monitored queues were moved to artemis and there is currently no way
+# to monitor artemis queues
+
+if [ ${IS_SATELLITE} -eq 0 ] ; then
+  if [[ ${SATELLITE_MAJOR_VERSION} -eq 6 && ${SATELLITE_MINOR_VERSION} -lt 11 ]] ; then
+    RUN_QPID=0
+  else
+    RUN_QPID=1
+  fi
+else
+  CAPSULE_MAJOR_VERSION=$(rpm -q satellite-capsule --qf %{VERSION} | cut -d. -f1)
+  CAPSULE_MINOR_VERSION=$(rpm -q satellite-capsule --qf %{VERSION} | cut -d. -f2)
+  if [[ ${CAPSULE_MAJOR_VERSION} -eq 6 && ${CAPSULE_MINOR_VERSION} -lt 11 ]] ; then
+    RUN_QPID=0
+  else
+    RUN_QPID=1
+  fi
+fi
+
+# Only run QPID on 6.10 or less
+if [ ${RUN_QPID} -eq 0 ] ; then
+  # Display pulp server qpid queues, not to be confused with katello agent queues
+  echo -en "\e[1;41;33mSatellite QPID\e[0m "
+  qpid-stat --ssl-certificate ${QPID_CERT} -b amqps://localhost:5671 -q | grep -v pulp.agent | grep -e ueue -e celery -e pulp -e resource -e = |grep -v katello_event_queue
+  echo
+fi
 
 # display health of server, services running, services pinging, etc...
 foreman-maintain health check 
