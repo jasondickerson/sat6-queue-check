@@ -170,7 +170,7 @@ else
     fi
   else
     #create .pgpass file with foreman db entry
-    PDB_PASS=$(grep password: /etc/foreman/database.yml | tr -s " " | cut -d\" -f2)
+    PDB_PASS=$(grep \'PASSWORD\' /etc/pulp/settings.py |cut -d\' -f4)
     echo ${PDB_HOST}:5432:pulpcore:${PDB_USER}:${PDB_PASS} >> ~/.pgpass
     chmod 600 ~/.pgpass
   fi
