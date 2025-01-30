@@ -13,6 +13,8 @@ v5.0 Added Puma Status for 6.10 and above, and added support for pulp3.
 
 v5.1 Added support for 6.11 and 6.12.  Updated pulp3 check.  Disabled qpid-stat for 6.11 and above.
 
+v6.0 Added support for new pulpcore package version for 6.16
+
 Example Output:
 
 ```
