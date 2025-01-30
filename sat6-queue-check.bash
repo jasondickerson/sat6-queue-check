@@ -109,7 +109,7 @@ fi
 
 # Distinguish between pulp2 and pulp3
 # rpm -q python3-pulpcore &> /dev/null
-rpm -qa | grep -e python3-pulpcore -e python39-pulpcore &> /dev/null
+rpm -qa | grep -e python3-pulpcore -e python39-pulpcore -e python3.11-pulpcore &> /dev/null
 if [ $? -ne 0 ] ; then 
 
   # configure Mongo authentication
